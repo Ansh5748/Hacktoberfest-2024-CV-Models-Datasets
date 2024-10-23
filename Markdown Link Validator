@@ -1,0 +1,63 @@
+import os
+import re
+import requests
+
+def validate_link(url):
+    """
+    Checks if a URL is valid by sending a HEAD request.
+
+    Args:
+        url (str): The URL to check.
+
+    Returns:
+        bool: True if the link is valid, False otherwise.
+    """
+    try:
+        response = requests.head(url, allow_redirects=True, timeout=5)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
+
+def find_links_in_markdown(file_path):
+    """
+    Extracts all links from a Markdown file.
+
+    Args:
+        file_path (str): The path to the Markdown file.
+
+    Returns:
+        list: A list of URLs found in the Markdown file.
+    """
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+    # Regex to find Markdown links in the format [text](URL)
+    links = re.findall(r'\[.*?\]\((http[s]?://.*?)\)', content)
+    return links
+
+def validate_links_in_directory(directory):
+    """
+    Validates all links found in Markdown files within a directory.
+
+    Args:
+        directory (str): The path to the directory.
+
+    Returns:
+        None
+    """
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith('.md'):
+                file_path = os.path.join(root, file)
+                print(f"Validating links in {file_path}...")
+                links = find_links_in_markdown(file_path)
+                for link in links:
+                    is_valid = validate_link(link)
+                    if is_valid:
+                        print(f"✅ {link} is valid.")
+                    else:
+                        print(f"❌ {link} is broken!")
+
+# Example usage:
+if __name__ == "__main__":
+    directory_to_validate = './'  # Replace with your directory path
+    validate_links_in_directory(directory_to_validate)
